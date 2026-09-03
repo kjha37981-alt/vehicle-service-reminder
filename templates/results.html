@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Service Report — Vehicle Service Reminder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="page">
+
+  <header class="masthead">
+    <div class="gauge">🚗</div>
+    <div>
+      <h1>Service Report</h1>
+      <p class="subtitle">Odometer: {{ current_mileage }} km · As of {{ current_date }}</p>
+    </div>
+  </header>
+
+  <a href="/" class="back-link">← Analyze another log</a>
+
+  <!-- ============ DUE REMINDERS ============ -->
+  <section class="block">
+    <div class="block-head"><span class="wrench">🔔</span><h2>Due Reminders</h2></div>
+    {% if report.due_reminders %}
+      {% for r in report.due_reminders %}
+      <div class="reminder-row status-{{ r.status | lower | replace(' ', '_') }}">
+        <span class="pill pill-{{ r.status | lower | replace(' ', '_') }}">{{ r.status }}</span>
+        <span class="reminder-type">{{ r.service_type }}</span>
+        <span class="reminder-detail">
+          {% if r.last_done %}
+            Last done {{ r.last_done }} · {{ r.km_since }} km / {{ r.days_since }} days ago
+          {% else %}
+            No record found in your log
+          {% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="hint">Everything is within safe intervals. ✓</p>
+    {% endif %}
+  </section>
+
+  <!-- ============ MAINTENANCE FORECAST ============ -->
+  <section class="block">
+    <div class="block-head"><span class="wrench">📈</span><h2>Maintenance Forecast</h2></div>
+    <p class="hint">Based on an estimated usage rate of <strong>{{ report.maintenance_forecast.km_per_day_used }} km/day</strong>.</p>
+    <table class="data-table">
+      <thead><tr><th>Service</th><th>Predicted Due Date</th><th>KM Remaining</th></tr></thead>
+      <tbody>
+        {% for f in report.maintenance_forecast.forecast %}
+        <tr>
+          <td>{{ f.service_type }}</td>
+          <td>{{ f.predicted_due_date }}</td>
+          <td>{{ f.km_remaining if f.km_remaining is not none else '—' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="callout">Estimated spend in the next 90 days: <strong>₹{{ report.maintenance_forecast.estimated_cost_next_90_days }}</strong></p>
+  </section>
+
+  <!-- ============ SERVICE INTERVAL TRACKING ============ -->
+  <section class="block">
+    <div class="block-head"><span class="wrench">⏱</span><h2>Service Interval Tracking</h2></div>
+    <table class="data-table">
+      <thead><tr><th>Service</th><th>Last Done</th><th>KM Since</th><th>Days Since</th><th>Limit</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for row in report.interval_tracking %}
+        <tr>
+          <td>{{ row.service_type }}</td>
+          <td>{{ row.last_done or '—' }}</td>
+          <td>{{ row.km_since if row.km_since is not none else '—' }}</td>
+          <td>{{ row.days_since if row.days_since is not none else '—' }}</td>
+          <td>{{ row.km_limit }} km / {{ row.month_limit }} mo</td>
+          <td><span class="pill pill-{{ row.status | lower | replace(' ', '_') }}">{{ row.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============ COST HISTORY ============ -->
+  <section class="block">
+    <div class="block-head"><span class="wrench">💰</span><h2>Cost History</h2></div>
+    <div class="stat-row">
+      <div class="stat-card"><span class="stat-label">Total Spent</span><span class="stat-value">₹{{ report.cost_history.total_cost }}</span></div>
+      <div class="stat-card"><span class="stat-label">Total Services</span><span class="stat-value">{{ report.cost_history.total_services }}</span></div>
+      <div class="stat-card"><span class="stat-label">Avg. Cost / Service</span><span class="stat-value">₹{{ report.cost_history.average_cost_per_service }}</span></div>
+    </div>
+    <h3 class="sub">By Service Type</h3>
+    <div class="bars">
+      {% for type, cost in report.cost_history.by_type.items() %}
+      <div class="bar-row">
+        <span class="bar-label">{{ type }}</span>
+        <div class="bar-track">
+          <div class="bar-fill" style="width: {{ (cost / report.cost_history.total_cost * 100) | round(1) if report.cost_history.total_cost else 0 }}%"></div>
+        </div>
+        <span class="bar-value">₹{{ cost }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- ============ MILEAGE LOG ============ -->
+  <section class="block">
+    <div class="block-head"><span class="wrench">🛣</span><h2>Mileage Log</h2></div>
+    <p class="hint">Estimated usage: <strong>{{ report.mileage_summary.avg_km_per_day }} km/day</strong></p>
+    <table class="data-table">
+      <thead><tr><th>Date</th><th>Odometer (km)</th></tr></thead>
+      <tbody>
+        {% for e in report.mileage_summary.entries %}
+        <tr><td>{{ e.date }}</td><td>{{ e.mileage }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <footer class="foot-note">Built with Python (Flask) + date/mileage math + forecasting logic.</footer>
+</div>
+
+</body>
+</html>

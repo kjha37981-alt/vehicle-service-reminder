@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vehicle Service Reminder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="page">
+
+  <header class="masthead">
+    <div class="gauge">⛽</div>
+    <div>
+      <h1>Vehicle Service Reminder</h1>
+      <p class="subtitle">Log your services. Get real due-dates and forecasts — not just a history file.</p>
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div class="flash">{% for m in messages %}<p>⚠ {{ m }}</p>{% endfor %}</div>
+    {% endif %}
+  {% endwith %}
+
+  <form action="/analyze" method="POST" class="sheet">
+
+    <section class="block">
+      <div class="block-head"><span class="wrench">🔧</span><h2>1. Vehicle Status Right Now</h2></div>
+      <div class="two-col">
+        <label class="field">
+          <span>Current Odometer Reading (km)</span>
+          <input type="number" name="current_mileage" placeholder="e.g. 18500" required>
+        </label>
+        <label class="field">
+          <span>Today's Date</span>
+          <input type="date" name="current_date" value="{{ today }}">
+        </label>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><span class="wrench">📋</span><h2>2. Paste Your Service Log</h2></div>
+      <p class="hint">
+        One record per line: <code>Service Type, YYYY-MM-DD, mileage, cost</code><br>
+        <span class="hint-sub">Example: <code>Oil Change, 2026-01-15, 12000, 1500</code></span>
+      </p>
+      <p class="hint hint-sub">Recognized service types: {{ service_types | join(', ') }}</p>
+      <textarea name="service_log" rows="12" placeholder="Oil Change, 2026-01-15, 12000, 1500
+Air Filter, 2026-01-15, 12000, 800
+Brake Pads, 2025-08-02, 9000, 3200
+Tyre Rotation, 2025-11-20, 11000, 600
+...">{{ previous_text or '' }}</textarea>
+    </section>
+
+    <button type="submit" class="submit-btn">Analyze Vehicle →</button>
+  </form>
+
+  <footer class="foot-note">Built with Python (Flask) + date/mileage math + forecasting logic.</footer>
+</div>
+
+</body>
+</html>
